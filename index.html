@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Space Defenders</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 500px;
+            max-height: 900px;
+            background: #000;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .menu.hidden { display: none; }
+
+        .menu h1 {
+            font-size: 48px;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+            margin-bottom: 5px;
+            letter-spacing: 3px;
+            text-align: center;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .menu h2 {
+            font-size: 24px;
+            color: #ff00ff;
+            text-shadow: 0 0 15px #ff00ff;
+            margin-bottom: 40px;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px #00ffff; }
+            50% { text-shadow: 0 0 40px #00ffff, 0 0 60px #0080ff; }
+        }
+
+        .menu button, .google-btn {
+            background: linear-gradient(135deg, #00ffff 0%, #0080ff 100%);
+            border: none;
+            color: #000;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 8px;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            min-width: 220px;
+            transition: all 0.3s;
+        }
+
+        .google-btn {
+            background: linear-gradient(135deg, #EA4335 0%, #FBBC04 100%);
+        }
+
+        .menu button:hover:not(:disabled), .google-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+        }
+
+        .google-btn:hover {
+            box-shadow: 0 0 30px rgba(234, 67, 53, 0.8);
+        }
+
+        .menu button:disabled, .google-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .menu .instructions {
+            margin-top: 25px;
+            text-align: center;
+            color: #aaa;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 20px;
+        }
+
+        .auth-container input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .auth-container input:focus {
+            border-color: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            background: rgba(0, 255, 255, 0.15);
+        }
+
+        .userInfo {
+            color: #00ffff;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .userProfile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .userProfile img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #00ffff;
+        }
+
+        .leaderboard {
+            margin-top: 20px;
+            background: rgba(0, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            max-width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .leaderboard h3 {
+            color: #ffff00;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+            color: #00ffff;
+            font-size: 12px;
+        }
+
+        .leaderboard-item:last-child {
+            border-bottom: none;
+        }
+
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            z-index: 5;
+            pointer-events: none;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .hud-item {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+        }
+
+        .hud-item.warning {
+            color: #ff0000;
+            border-color: #ff0000;
+            animation: pulse 0.5s infinite;
+        }
+
+        #levelBar {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            right: 10px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        #levelProgress {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            width: 0%;
+            transition: width 0.3s;
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        #bossHealthBar {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 300px;
+            height: 12px;
+            background: rgba(255, 0, 0, 0.2);
+            border: 2px solid #ff0000;
+            border-radius: 6px;
+            overflow: hidden;
+            z-index: 5;
+            pointer-events: none;
+            display: none;
+        }
+
+        #bossHealthBar.show { display: block; }
+
+        #bossHealth {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff6600);
+            width: 100%;
+            transition: width 0.3s;
+            box-shadow: 0 0 15px #ff0000;
+        }
+
+        #bossName {
+            position: absolute;
+            top: 55px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff0000;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff0000;
+            z-index: 5;
+            pointer-events: none;
+            display: none;
+        }
+
+        #bossName.show { display: block; }
+
+        #pauseButton {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 0, 255, 0.3);
+            border: 2px solid #ff00ff;
+            color: white;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+            z-index: 6;
+            transition: all 0.3s;
+        }
+
+        #pauseButton:hover {
+            background: rgba(255, 0, 255, 0.5);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.8);
+        }
+
+        /* CONTROLES TÁCTILES MEJORADOS */
+        #touchControls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 140px;
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-left: 15px;
+            padding-right: 15px;
+            padding-top: 10px;
+            z-index: 5;
+            pointer-events: none;
+            background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%);
+        }
+
+        #touchControls.hidden { display: none; }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .moveGroup {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .touchBtn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.2);
+            border: 3px solid rgba(0, 255, 255, 0.6);
+            color: rgba(0, 255, 255, 0.9);
+            font-size: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            transition: all 0.15s;
+            backdrop-filter: blur(5px);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .touchBtn:active, .touchBtn.active {
+            background: rgba(0, 255, 255, 0.5);
+            border-color: #00ffff;
+            color: #00ffff;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.9);
+            transform: scale(1.15);
+        }
+
+        #fireBtn {
+            width: 90px;
+            height: 90px;
+            background: rgba(255, 0, 255, 0.2);
+            border-color: rgba(255, 0, 255, 0.6);
+            color: rgba(255, 0, 255, 0.9);
+            font-size: 32px;
+        }
+
+        #fireBtn:active, #fireBtn.active {
+            background: rgba(255, 0, 255, 0.5);
+            border-color: #ff00ff;
+            color: #ff00ff;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.9);
+        }
+
+        .gameOver h1 {
+            color: #ff0000;
+            text-shadow: 0 0 20px #ff0000;
+        }
+
+        .gameOver .finalScore {
+            font-size: 28px;
+            color: #ffff00;
+            margin: 20px 0;
+        }
+
+        #levelTransition {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 8;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        #levelTransition.show {
+            opacity: 1;
+        }
+
+        #levelTransition h1 {
+            font-size: 50px;
+            color: #ffff00;
+            text-shadow: 0 0 30px #ffff00;
+            animation: pulse 1s infinite;
+        }
+
+        #levelTransition h2 {
+            font-size: 24px;
+            color: #00ffff;
+            margin-top: 15px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .floatText {
+            position: absolute;
+            color: #ffff00;
+            font-weight: bold;
+            font-size: 20px;
+            text-shadow: 0 0 10px #ffff00;
+            pointer-events: none;
+            animation: floatUp 1s forwards;
+            z-index: 7;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+
+        #saveMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 255, 0, 0.2);
+            border: 2px solid #00ff00;
+            padding: 15px 30px;
+            border-radius: 10px;
+            color: #00ff00;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        #saveMessage.show {
+            opacity: 1;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 255, 255, 0.3);
+            border-top: 4px solid #00ffff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #ff0000;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="hud" class="hidden">
+            <div class="hud-item">⭐ <span id="score">0</span></div>
+            <div class="hud-item">🎯 Nv.<span id="level">1</span></div>
+            <div class="hud-item" id="livesDisplay">❤️ <span id="lives">3</span></div>
+            <div class="hud-item">🎯 <span id="enemyCounter">0</span>/<span id="enemyTotal">10</span></div>
+        </div>
+
+        <div id="levelBar" class="hidden">
+            <div id="levelProgress"></div>
+        </div>
+
+        <div id="bossName">JEFE</div>
+        <div id="bossHealthBar">
+            <div id="bossHealth"></div>
+        </div>
+
+        <button id="pauseButton" class="hidden">⏸ PAUSA</button>
+
+        <div id="touchControls" class="hidden">
+            <div class="control-group">
+                <div class="moveGroup">
+                    <div class="touchBtn" id="leftBtn">◀</div>
+                    <div class="touchBtn" id="rightBtn">▶</div>
+                </div>
+                <div style="font-size:12px;color:#00ffff;opacity:0.7;">Mover</div>
+            </div>
+            <div class="control-group">
+                <div class="touchBtn" id="fireBtn">🔥</div>
+                <div style="font-size:12px;color:#ff00ff;opacity:0.7;">Disparar</div>
+            </div>
+        </div>
+
+        <div id="levelTransition">
+            <h1 id="levelTitle">NIVEL 1</h1>
+            <h2 id="levelSubtitle">¡Prepárate!</h2>
+        </div>
+
+        <div id="saveMessage">💾 Progreso guardado en la nube</div>
+
+        <!-- MENÚ PRINCIPAL CON AUTENTICACIÓN -->
+        <div id="mainMenu" class="menu">
+            <h1>SPACE</h1>
+            <h2>DEFENDERS</h2>
+            
+            <div id="loginSection" class="auth-container">
+                <div class="loading-spinner" id="loadingSpinner" style="display:none;"></div>
+                <div id="loginForm">
+                    <button id="googleLoginBtn" class="google-btn">
+                        🔐 Inicia sesión con Google
+                    </button>
+                    <div class="error-message" id="loginError"></div>
+                </div>
+                <div id="profileSection" style="display:none;">
+                    <div class="userProfile">
+                        <img id="userPhoto" alt="Foto de perfil">
+                        <span id="userName" style="color:#00ffff;"></span>
+                    </div>
+                    <button id="logoutBtn" style="background: linear-gradient(135deg, #ff6600 0%, #ff0000 100%); min-width:150px;">🚪 Cerrar sesión</button>
+                </div>
+            </div>
+            
+            <button id="startBtn" disabled>🚀 NUEVA PARTIDA</button>
+            <button id="continueBtn" disabled>▶ CONTINUAR PARTIDA</button>
+            <button id="leaderboardBtn">🏆 TABLA DE PUNTOS</button>
+            
+            <div id="leaderboard" class="leaderboard" style="display:none;">
+                <h3>🏆 TOP PUNTUACIONES</h3>
+                <div id="leaderboardList"></div>
+            </div>
+            
+            <div class="instructions">
+                Elimina oleadas de aliens y jefes<br>
+                para avanzar de nivel<br>
+                🔊 Sonido activado | ☁️ Guardado en la nube | ⚡ Power-ups
+            </div>
+        </div>
+
+        <div id="pauseMenu" class="menu hidden">
+            <h1>⏸ PAUSA</h1>
+            <button id="resumeBtn">▶ CONTINUAR</button>
+            <button id="saveBtn">☁️ GUARDAR EN LA NUBE</button>
+            <button id="restartBtn">🔄 REINICIAR</button>
+            <button id="quitBtn">🏠 MENÚ</button>
+        </div>
+
+        <div id="gameOverMenu" class="menu hidden gameOver">
+            <h1>GAME OVER</h1>
+            <div class="finalScore">Puntos: <span id="finalScore">0</span></div>
+            <div class="finalScore" style="font-size:20px;color:#00ffff;">Nivel alcanzado: <span id="finalLevel">1</span></div>
+            <button id="restartBtn2">🔄 REINICIAR</button>
+            <button id="quitBtn2">🏠 MENÚ</button>
+        </div>
+
+        <div id="winMenu" class="menu hidden">
+            <h1 style="color:#ffff00;">🏆 ¡VICTORIA!</h1>
+            <div class="finalScore">Puntos: <span id="winScore">0</span></div>
+            <button id="restartBtn3">🔄 JUGAR DE NUEVO</button>
+            <button id="quitBtn3">🏠 MENÚ</button>
+        </div>
+    </div>
+
+    <!-- Google SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Script del juego -->
+    <script src="game.js" defer></script>
+</body>
+</html>
