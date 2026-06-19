@@ -1,0 +1,6 @@
+{
+  "name": "Space Defenders",
+  "description": "An action-packed retro arcade space shooter in native Android with multi-level campaigns, boss fights, sound effects synthesis, and persistent game states.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
